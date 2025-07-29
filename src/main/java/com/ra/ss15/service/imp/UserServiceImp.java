@@ -4,6 +4,7 @@ import com.ra.ss15.model.dto.request.UserLoginRequest;
 import com.ra.ss15.model.dto.request.UserRegisterRequest;
 import com.ra.ss15.model.dto.response.JWTResponse;
 import com.ra.ss15.model.entity.Role;
+import com.ra.ss15.model.entity.RoleName;
 import com.ra.ss15.model.entity.User;
 import com.ra.ss15.repository.RoleRepository;
 import com.ra.ss15.repository.UserRepository;
@@ -16,12 +17,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -78,8 +79,8 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public User searchByUsername(String username) {
-        return userRepository.findByUsername(username).orElseThrow(()-> new RuntimeException("Username not found!"));
+    public User searchByUsername(String userName) {
+        return userRepository.findByUserName(userName).orElseThrow(()-> new RuntimeException("Username not found!"));
     }
 
     @Override
@@ -89,27 +90,47 @@ public class UserServiceImp implements UserService {
         return userRepository.save(user);
     }
 
+    @Override
+    public User updateRole(Long id, RoleName newRole) {
+        User user = userRepository.findById(id).orElseThrow(()-> new RuntimeException("User not found!"));
+
+        Role role = roleRepository.findByRoleName(newRole).orElseThrow(()-> new RuntimeException("Role not found!"));
+
+        user.setRoles(Collections.singletonList(role));
+
+        return userRepository.save(user);
+    }
+
+
+    @Override
+    public User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userName = auth.getName();
+        return userRepository.findByUserName(userName).orElseThrow(()-> new RuntimeException("Username not found!"));
+    }
+
     private List<Role> mapRoleStringToRole(List<String> roles) {
         List<Role> roleList = new ArrayList<>();
 
         if(roles!=null && !roles.isEmpty()){
-            roles.forEach(role->{
+            for (String role : roles) {
                 switch (role){
                     case "ROLE_ADMIN":
-                        roleList.add(roleRepository.findByRoleName(role).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_admin")));
+                        roleList.add(roleRepository.findByRoleName(RoleName.ROLE_ADMIN).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_admin")));
                         break;
                     case "ROLE_USER":
-                        roleList.add(roleRepository.findByRoleName(role).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_user")));
+                        roleList.add(roleRepository.findByRoleName(RoleName.ROLE_USER).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_user")));
                         break;
                     case "ROLE_MODERATOR":
-                        roleList.add(roleRepository.findByRoleName(role).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_moderator")));
+                        roleList.add(roleRepository.findByRoleName(RoleName.ROLE_MODERATOR).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_moderator")));
                         break;
                     default:
-                        roleList.add(roleRepository.findByRoleName("ROLE_USER").orElseThrow(()-> new NoSuchElementException("Khong ton tai role_user")));
+                        roleList.add(roleRepository.findByRoleName(RoleName.ROLE_USER).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_user")));
                 }
-            });
+
+            }
         }else{
-            roleList.add(roleRepository.findByRoleName("ROLE_USER").orElseThrow(()-> new NoSuchElementException("Khong ton tai role_user")));
+            roleList.add(roleRepository.findByRoleName(RoleName.ROLE_USER).orElseThrow(()-> new NoSuchElementException("Khong ton tai role_user")));
         }
         return roleList;
     }

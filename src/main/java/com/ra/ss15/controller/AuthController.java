@@ -4,6 +4,7 @@ import com.ra.ss15.model.dto.request.UserLoginRequest;
 import com.ra.ss15.model.dto.request.UserRegisterRequest;
 import com.ra.ss15.model.dto.response.APIResponse;
 import com.ra.ss15.model.dto.response.JWTResponse;
+import com.ra.ss15.model.entity.RoleName;
 import com.ra.ss15.model.entity.User;
 import com.ra.ss15.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,5 +47,15 @@ public class AuthController {
         User updateUser = userService.toggleUser(id);
         String status = updateUser.getEnabled() ? "Mở khóa" : "Khóa";
         return new ResponseEntity<>(new APIResponse<>(true, "Đã " + status + " người dùng thành công.", updateUser, HttpStatus.OK), HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/role")
+    public ResponseEntity<APIResponse<User>> updateRole(@PathVariable Long id, @RequestParam RoleName role){
+        return new ResponseEntity<>(new APIResponse<>(true, "Cập nhật role thành công",  userService.updateRole(id, role), HttpStatus.OK), HttpStatus.OK);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<APIResponse<User>> getCurrentUser(){
+        return new ResponseEntity<>(new APIResponse<>(true, "Thông tin của user hiện tại",  userService.getCurrentUser(), HttpStatus.OK), HttpStatus.OK);
     }
 }
